@@ -7,6 +7,15 @@ An MCP (Model Context Protocol) server that enables AI assistants to interact wi
 - **Query Execution**: Run TypeQL read, write, and schema queries
 - **Database Management**: List, create, and delete databases
 - **User Management**: List, create, and delete users
+- **Confirmation prompts**: Write/schema queries and all destructive admin operations require explicit user approval before they reach TypeDB (see below)
+
+## Confirmation prompts
+
+Any operation that can mutate state — write/schema queries, database creation/deletion, user creation/deletion — pauses and asks the human user to approve before running. The exact query (or operation) is shown verbatim in the prompt. This uses the MCP **elicitation** primitive, so the request comes from the server and is rendered by the client; the agent cannot bypass it.
+
+Read queries (`transaction_type: "read"`) and read-only listings (`database_list`, `database_schema`, `user_list`) run without prompting.
+
+If your MCP client does not support elicitation, mutating operations will be blocked entirely and the agent will receive a "not executed" response. Confirmed support: recent Claude Code. Other clients may vary.
 
 ## Running the Server
 
