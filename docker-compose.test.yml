@@ -1,0 +1,6 @@
+services:
+  typedb-mcp:
+    build: .
+    depends_on:
+      typedb:
+        condition: service_started

@@ -143,5 +143,5 @@ if __name__ == "__main__":
     # Run server with increased graceful shutdown timeout
     logger.info(f"Starting TypeDB MCP Server on port {args.port}")
     logger.info(f"Connecting to TypeDB at {args.typedb_address}")
-    mcp.run(transport="http", host="0.0.0.0", port=args.port, timeout_graceful_shutdown=30)
+    mcp.run(transport="http", host="0.0.0.0", port=args.port, uvicorn_config={"timeout_graceful_shutdown": 30})
 
