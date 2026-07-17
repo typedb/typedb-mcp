@@ -1,0 +1,54 @@
+{
+  "_comment": "version and image tag are placeholders; the release workflow injects the real version from the VERSION file",
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.typedb/typedb-mcp",
+  "title": "TypeDB",
+  "description": "Execute TypeQL queries and manage databases and users on a TypeDB server.",
+  "version": "0.0.0",
+  "repository": {
+    "url": "https://github.com/typedb/typedb-mcp-server",
+    "source": "github"
+  },
+  "websiteUrl": "https://typedb.com",
+  "packages": [
+    {
+      "registryType": "oci",
+      "identifier": "docker.io/typedb/typedb-mcp:0.0.0",
+      "runtimeHint": "docker",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "-p",
+          "value": "8001:8001"
+        }
+      ],
+      "packageArguments": [
+        {
+          "type": "named",
+          "name": "--typedb-address",
+          "description": "Address of TypeDB's HTTP endpoint, e.g. http://host.docker.internal:8000",
+          "isRequired": true,
+          "format": "string"
+        },
+        {
+          "type": "named",
+          "name": "--typedb-username",
+          "description": "TypeDB username (default: admin)",
+          "isRequired": false,
+          "format": "string"
+        },
+        {
+          "type": "named",
+          "name": "--typedb-password",
+          "description": "TypeDB password (default: password)",
+          "isRequired": false,
+          "format": "string"
+        }
+      ],
+      "transport": {
+        "type": "streamable-http",
+        "url": "http://localhost:8001/mcp"
+      }
+    }
+  ]
+}

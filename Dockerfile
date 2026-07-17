@@ -1,5 +1,8 @@
 FROM python:3.11-slim
 
+# Required by the official MCP Registry to verify image ownership
+LABEL io.modelcontextprotocol.server.name="io.github.typedb/typedb-mcp"
+
 WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
