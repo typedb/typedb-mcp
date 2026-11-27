@@ -17,6 +17,8 @@ def query(query: str, database: str, transaction_type: str = "read") -> str:
     Example:
         query("match $p isa person; fetch { $p.* };", "social_network")
     """
+    if config.READ_ONLY and transaction_type != "read":
+        raise ValueError("read-only mode: only transaction_type 'read' is allowed")
     token = get_auth_token()
     
     response = requests.post(

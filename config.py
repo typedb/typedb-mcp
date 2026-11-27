@@ -2,3 +2,4 @@
 TYPEDB_URL = None
 TYPEDB_USERNAME = "admin"
 TYPEDB_PASSWORD = "password"
+READ_ONLY = False
