@@ -5,6 +5,9 @@ import requests
 
 import common
 import config
+import database
+import query as query_mod
+import user
 
 
 class FakeTypeDB:
@@ -90,3 +93,30 @@ def test_every_request_has_timeout(fake):
     assert signin[2]["timeout"] == 10
     assert [c[2]["timeout"] for c in fake.api_calls()] == [60, 5]
 
+
+
+def test_tool_modules_use_upstream_paths_and_one_signin(fake):
+    database.list_databases()
+    database.create_database("d")
+    database.delete_database("d")
+    database.database_schema("d")
+    user.list_users()
+    user.create_user("u", "pw")
+    user.delete_user("u")
+    query_mod.query("match $x isa y;", "d", "write")
+    assert fake.signins == 1
+    got = [(m, u.removeprefix("http://typedb.test")) for m, u, _ in fake.api_calls()]
+    assert got == [
+        ("GET", "/v1/databases"),
+        ("POST", "/v1/databases/d"),
+        ("DELETE", "/v1/databases/d"),
+        ("GET", "/v1/databases/d/schema"),
+        ("GET", "/v1/users"),
+        ("POST", "/v1/users/u"),
+        ("DELETE", "/v1/users/u"),
+        ("POST", "/v1/query"),
+    ]
+    assert fake.api_calls()[5][2]["json"] == {"password": "pw"}
+    assert fake.api_calls()[7][2]["json"] == {
+        "databaseName": "d", "transactionType": "write", "query": "match $x isa y;", "commit": True,
+    }

@@ -1,14 +1,10 @@
-import requests
-import config
-from common import get_auth_token, handle_typedb_response
+from common import typedb_request, handle_typedb_response
 
 
 def list_databases() -> str:
     """Get all databases present on the server."""
-    token = get_auth_token()
-    response = requests.get(
-        f"{config.TYPEDB_URL}/v1/databases",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "GET", "/v1/databases"
     )
     handle_typedb_response(response)
     return response.text
@@ -16,10 +12,8 @@ def list_databases() -> str:
 
 def create_database(name: str) -> str:
     """Create a database on the server."""
-    token = get_auth_token()
-    response = requests.post(
-        f"{config.TYPEDB_URL}/v1/databases/{name}",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "POST", f"/v1/databases/{name}"
     )
     handle_typedb_response(response)
     return f"Database '{name}' created successfully"
@@ -27,10 +21,8 @@ def create_database(name: str) -> str:
 
 def delete_database(name: str) -> str:
     """Delete a database from the server."""
-    token = get_auth_token()
-    response = requests.delete(
-        f"{config.TYPEDB_URL}/v1/databases/{name}",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "DELETE", f"/v1/databases/{name}"
     )
     handle_typedb_response(response)
     return f"Database '{name}' deleted successfully"
@@ -38,10 +30,8 @@ def delete_database(name: str) -> str:
 
 def database_schema(name: str) -> str:
     """Get the complete database schema as TypeQL."""
-    token = get_auth_token()
-    response = requests.get(
-        f"{config.TYPEDB_URL}/v1/databases/{name}/schema",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "GET", f"/v1/databases/{name}/schema"
     )
     handle_typedb_response(response)
     return response.text

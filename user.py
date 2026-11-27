@@ -1,14 +1,10 @@
-import requests
-import config
-from common import get_auth_token, handle_typedb_response
+from common import typedb_request, handle_typedb_response
 
 
 def list_users() -> str:
     """Get all users present on the server."""
-    token = get_auth_token()
-    response = requests.get(
-        f"{config.TYPEDB_URL}/v1/users",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "GET", "/v1/users"
     )
     handle_typedb_response(response)
     return response.text
@@ -16,10 +12,8 @@ def list_users() -> str:
 
 def create_user(username: str, password: str) -> str:
     """Create a new user on the server."""
-    token = get_auth_token()
-    response = requests.post(
-        f"{config.TYPEDB_URL}/v1/users/{username}",
-        headers={"Authorization": f"Bearer {token}"},
+    response = typedb_request(
+        "POST", f"/v1/users/{username}",
         json={"password": password}
     )
     handle_typedb_response(response)
@@ -28,10 +22,8 @@ def create_user(username: str, password: str) -> str:
 
 def delete_user(username: str) -> str:
     """Delete a user from the server."""
-    token = get_auth_token()
-    response = requests.delete(
-        f"{config.TYPEDB_URL}/v1/users/{username}",
-        headers={"Authorization": f"Bearer {token}"}
+    response = typedb_request(
+        "DELETE", f"/v1/users/{username}"
     )
     handle_typedb_response(response)
     return f"User '{username}' deleted successfully"

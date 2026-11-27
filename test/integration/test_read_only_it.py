@@ -4,7 +4,9 @@ import pytest
 from fastmcp import Client
 from fastmcp.exceptions import ToolError
 
+import common
 import config
+from query import query
 from server import build_server
 
 pytestmark = pytest.mark.integration
@@ -75,3 +77,14 @@ def test_database_list_and_schema(temp_db):
     dbs, schema = run(True, fn)
     assert temp_db in dbs
     assert "item-id" in schema
+
+
+def test_token_renewed_after_invalidation(temp_db, monkeypatch):
+    q = "match $i isa item; fetch { $i.* };"
+    query(q, temp_db, "read")
+    monkeypatch.setattr(common, "_token", "invalid-token-for-test")  # what TypeDB sees after a restart
+    signins = []
+    real = common.get_auth_token
+    monkeypatch.setattr(common, "get_auth_token", lambda: signins.append(1) or real())
+    assert "ITEM-0001" in query(q, temp_db, "read")
+    assert len(signins) == 1
