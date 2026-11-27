@@ -1,0 +1,92 @@
+import json
+
+import pytest
+import requests
+
+import common
+import config
+
+
+class FakeTypeDB:
+    """Stands in for requests.sessions.Session.request; answers from a script of status codes."""
+
+    def __init__(self):
+        self.calls = []  # (method, url, kwargs)
+        self.statuses = []  # status codes for non-signin calls, consumed in order; default 200
+        self.signins = 0
+
+    def __call__(self, session, method, url, **kwargs):
+        self.calls.append((method, url, kwargs))
+        r = requests.Response()
+        if url.endswith("/v1/signin"):
+            self.signins += 1
+            r.status_code = 200
+            r._content = json.dumps({"token": f"t{self.signins}"}).encode()
+            return r
+        r.status_code = self.statuses.pop(0) if self.statuses else 200
+        r._content = json.dumps({"code": "AUT3", "message": "invalid"} if r.status_code == 401 else {"ok": True}).encode()
+        return r
+
+    def api_calls(self):
+        return [c for c in self.calls if not c[1].endswith("/v1/signin")]
+
+
+@pytest.fixture
+def fake(monkeypatch):
+    f = FakeTypeDB()
+    monkeypatch.setattr(requests.sessions.Session, "request", lambda session, method, url, **kw: f(session, method, url, **kw))
+    monkeypatch.setattr(common, "_token", None)
+    monkeypatch.setattr(config, "TYPEDB_URL", "http://typedb.test")
+    monkeypatch.setattr(config, "TOKEN_REUSE", True)
+    monkeypatch.setattr(config, "READ_ONLY", False)
+    return f
+
+
+def test_token_reused_across_calls(fake):
+    common.typedb_request("GET", "/v1/databases")
+    common.typedb_request("GET", "/v1/databases")
+    assert fake.signins == 1
+    assert [c[2]["headers"]["Authorization"] for c in fake.api_calls()] == ["Bearer t1", "Bearer t1"]
+
+
+def test_401_signs_in_once_more_and_retries(fake):
+    fake.statuses = [401, 200]
+    r = common.typedb_request("GET", "/v1/databases")
+    assert r.status_code == 200
+    assert fake.signins == 2
+    assert len(fake.api_calls()) == 2
+    assert fake.api_calls()[1][2]["headers"]["Authorization"] == "Bearer t2"
+
+
+def test_second_401_is_returned_without_loop(fake):
+    fake.statuses = [401, 401, 200]
+    r = common.typedb_request("GET", "/v1/databases")
+    assert r.status_code == 401
+    assert len(fake.api_calls()) == 2
+    with pytest.raises(requests.HTTPError):
+        common.handle_typedb_response(r)
+
+
+def test_no_token_reuse_signs_in_per_call(fake, monkeypatch):
+    monkeypatch.setattr(config, "TOKEN_REUSE", False)
+    common.typedb_request("GET", "/v1/databases")
+    common.typedb_request("GET", "/v1/databases")
+    assert fake.signins == 2
+
+
+def test_no_token_reuse_still_retries_401_once(fake, monkeypatch):
+    monkeypatch.setattr(config, "TOKEN_REUSE", False)
+    fake.statuses = [401, 200]
+    r = common.typedb_request("GET", "/v1/databases")
+    assert r.status_code == 200
+    assert fake.signins == 2
+    assert len(fake.api_calls()) == 2
+
+
+def test_every_request_has_timeout(fake):
+    common.typedb_request("GET", "/v1/databases")
+    common.typedb_request("GET", "/v1/databases", timeout=5)
+    signin = [c for c in fake.calls if c[1].endswith("/v1/signin")][0]
+    assert signin[2]["timeout"] == 10
+    assert [c[2]["timeout"] for c in fake.api_calls()] == [60, 5]
+

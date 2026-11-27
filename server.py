@@ -129,6 +129,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     # No %(default)s here: --help must never print the password.
     parser.add_argument("--typedb-password", type=str, default=os.environ.get("TYPEDB_PASSWORD", "password"), help="TypeDB password (default: env TYPEDB_PASSWORD, else the TypeDB default)")
     parser.add_argument("--read-only", action="store_true", help="Register only read tools and allow only read transactions")
+    parser.add_argument("--no-token-reuse", action="store_true", help="Sign in on every TypeDB request instead of reusing the token")
     return parser.parse_args(argv)
 
 
@@ -138,6 +139,7 @@ def main(argv=None) -> None:
     config.TYPEDB_URL = args.typedb_address
     config.TYPEDB_USERNAME = args.typedb_username
     config.TYPEDB_PASSWORD = args.typedb_password
+    config.TOKEN_REUSE = not args.no_token_reuse
 
     # Signal handler for graceful shutdown
     def handle_shutdown(signum, frame):
