@@ -14,24 +14,28 @@ def get_auth_token() -> str:
     return response.json()["token"]
 
 
-# Cached token. No lock: two threads signing in at once only yields two valid tokens.
+# Cached token, shared between threads. typedb_request reads it into a local variable
+# and only writes it to publish a fresh one; two threads signing in at once yields two valid tokens.
 _token: str | None = None
 
 
 def typedb_request(method: str, path: str, timeout: float = 60, **kwargs) -> requests.Response:
     """Call the TypeDB HTTP API with a reused token; on HTTP 401 sign in once more and retry once."""
     global _token
-    if not config.TOKEN_REUSE:
-        _token = None
+    token = _token if config.TOKEN_REUSE else None
     for attempt in (0, 1):
-        if _token is None:
-            _token = get_auth_token()
+        if token is None:
+            token = get_auth_token()
+            if config.TOKEN_REUSE:
+                _token = token
         response = requests.request(
             method, config.TYPEDB_URL + path,
-            headers={"Authorization": f"Bearer {_token}"}, timeout=timeout, **kwargs,
+            headers={"Authorization": f"Bearer {token}"}, timeout=timeout, **kwargs,
         )
         if response.status_code == 401 and attempt == 0:
-            _token = None  # token expired or TypeDB restarted
+            token = None  # token expired or TypeDB restarted
+            if config.TOKEN_REUSE:
+                _token = None
             continue
         return response
     return response

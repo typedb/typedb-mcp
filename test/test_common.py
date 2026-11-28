@@ -120,3 +120,21 @@ def test_tool_modules_use_upstream_paths_and_one_signin(fake):
     assert fake.api_calls()[7][2]["json"] == {
         "databaseName": "d", "transactionType": "write", "query": "match $x isa y;", "commit": True,
     }
+
+
+
+def test_header_uses_own_token_when_another_thread_resets_the_cache(fake, monkeypatch):
+    """Another thread clearing the shared cache between sign-in and the request must not yield 'Bearer None'."""
+
+    class RacingConfig:
+        TOKEN_REUSE = False
+        TYPEDB_USERNAME = TYPEDB_PASSWORD = "x"
+
+        @property
+        def TYPEDB_URL(self):
+            common._token = None  # what a concurrent call does at its start
+            return "http://typedb.test"
+
+    monkeypatch.setattr(common, "config", RacingConfig())
+    common.typedb_request("GET", "/v1/databases")
+    assert fake.api_calls()[0][2]["headers"]["Authorization"] == "Bearer t1"
