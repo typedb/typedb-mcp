@@ -2,9 +2,13 @@ name: Unit Tests
 
 on: [push, pull_request]
 
+permissions:
+  contents: read
+
 jobs:
   unit:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
