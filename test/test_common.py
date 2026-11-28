@@ -138,3 +138,26 @@ def test_header_uses_own_token_when_another_thread_resets_the_cache(fake, monkey
     monkeypatch.setattr(common, "config", RacingConfig())
     common.typedb_request("GET", "/v1/databases")
     assert fake.api_calls()[0][2]["headers"]["Authorization"] == "Bearer t1"
+
+
+def test_path_segments_are_url_encoded(fake):
+    database.database_schema("x/../../users?")
+    database.create_database("a b")
+    database.delete_database("a/b")
+    user.create_user("u/../x", "pw")
+    user.delete_user("u?")
+    got = [u.removeprefix("http://typedb.test") for _, u, _ in fake.api_calls()]
+    assert got == [
+        "/v1/databases/x%2F..%2F..%2Fusers%3F/schema",
+        "/v1/databases/a%20b",
+        "/v1/databases/a%2Fb",
+        "/v1/users/u%2F..%2Fx",
+        "/v1/users/u%3F",
+    ]
+
+
+def test_database_schema_cannot_reach_other_endpoints(fake):
+    """requests normalizes dot segments in the path, so the encoded name must stay one segment on the wire."""
+    database.database_schema("x/../../users?")
+    prepared = requests.Request("GET", fake.api_calls()[0][1]).prepare()
+    assert prepared.path_url == "/v1/databases/x%2F..%2F..%2Fusers%3F/schema"

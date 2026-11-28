@@ -1,3 +1,5 @@
+from urllib.parse import quote
+
 from common import typedb_request, handle_typedb_response
 
 
@@ -13,7 +15,7 @@ def list_users() -> str:
 def create_user(username: str, password: str) -> str:
     """Create a new user on the server."""
     response = typedb_request(
-        "POST", f"/v1/users/{username}",
+        "POST", f"/v1/users/{quote(username, safe='')}",
         json={"password": password}
     )
     handle_typedb_response(response)
@@ -23,7 +25,7 @@ def create_user(username: str, password: str) -> str:
 def delete_user(username: str) -> str:
     """Delete a user from the server."""
     response = typedb_request(
-        "DELETE", f"/v1/users/{username}"
+        "DELETE", f"/v1/users/{quote(username, safe='')}"
     )
     handle_typedb_response(response)
     return f"User '{username}' deleted successfully"
