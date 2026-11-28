@@ -5,8 +5,8 @@ services:
     image: typedb/typedb:3.7.2
     container_name: typedb
     ports:
-      - "1729:1729"
-      - "8000:8000"
+      - "127.0.0.1:1729:1729"
+      - "127.0.0.1:8000:8000"
     networks:
       - typedb-network
     healthcheck:
@@ -20,7 +20,7 @@ services:
     platform: linux/amd64
     container_name: typedb-mcp
     ports:
-      - "8001:8001"
+      - "127.0.0.1:8001:8001"
     depends_on:
       typedb:
         condition: service_healthy

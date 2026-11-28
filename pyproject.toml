@@ -6,4 +6,16 @@ readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
     "fastmcp>=2.13.3",
+    "requests>=2.32",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["."]
+markers = ["integration: needs a running TypeDB (set TYPEDB_IT_URL)"]
+addopts = "-m 'not integration'"
